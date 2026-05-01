@@ -1,0 +1,798 @@
+# AI 哼哈官 - 完整代码
+
+## 使用说明
+
+1. 复制下面 `index.html` 的全部代码
+2. 打开记事本（Windows: Win+R → 输入 `notepad` → 回车）
+3. 粘贴代码
+4. 保存为 `index.html`（注意后缀是 `.html` 不是 `.txt`）
+5. 双击打开，用 Chrome/Edge 浏览器访问
+
+---
+
+## index.html
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 哼哈官 - Toastmasters 会议助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .control-panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ee5a5a;
+        }
+
+        .btn-success {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #40c057;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .speaker-section {
+            margin-bottom: 24px;
+        }
+
+        .speaker-section h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .speaker-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .speaker-btn {
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .speaker-btn:hover {
+            background: #e9ecef;
+        }
+
+        .speaker-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .speaker-btn .count {
+            background: rgba(0,0,0,0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .speaker-btn.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .stats-panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .current-speaker {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .current-speaker .label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .current-speaker .name {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .current-speaker .total {
+            margin-top: 10px;
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .ah-stats {
+            margin-bottom: 24px;
+        }
+
+        .ah-stats h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .ah-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .ah-item {
+            background: #f8f9fa;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .ah-item.highlight {
+            background: #fff3bf;
+            border-color: #ffd43b;
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .ah-item .word {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .ah-item .count {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .transcript-section h3 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .transcript-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 16px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            border: 1px solid #e9ecef;
+        }
+
+        .transcript-box .segment {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .transcript-box .speaker {
+            font-weight: 600;
+            color: #667eea;
+            margin-right: 8px;
+        }
+
+        .transcript-box .ah-word {
+            background: #fff3bf;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #adb5bd;
+        }
+
+        .status-dot.listening {
+            background: #51cf66;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 AI 哼哈官</h1>
+            <p>Toastmasters 会议赘语统计助手</p>
+        </header>
+
+        <div class="main-content">
+            <div class="panel control-panel">
+                <h2>⚙️ 会议控制</h2>
+                
+                <div class="status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">准备就绪</span>
+                </div>
+
+                <div class="session-controls">
+                    <button class="btn btn-primary" id="startBtn" onclick="startSession()">
+                        🎤 开始
+                    </button>
+                    <button class="btn btn-danger" id="stopBtn" onclick="stopSession()" disabled>
+                        ⏹️ 停止
+                    </button>
+                </div>
+
+                <div class="speaker-section">
+                    <h3>👤 当前发言人</h3>
+                    <div class="speaker-grid" id="speakerGrid"></div>
+                </div>
+
+                <div class="export-section">
+                    <button class="btn btn-success" onclick="exportReport()" id="exportBtn" disabled>
+                        📊 导出报告
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetAll()" style="margin-left: 10px;">
+                        🔄 重置
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel stats-panel">
+                <h2>📊 实时统计</h2>
+
+                <div class="current-speaker">
+                    <div class="label">当前发言人</div>
+                    <div class="name" id="currentSpeakerName">请选择发言人</div>
+                    <div class="total" id="currentSpeakerTotal">0 次哼哈</div>
+                </div>
+
+                <div class="ah-stats">
+                    <h3>🗣️ 当前发言人哼哈词统计</h3>
+                    <div class="ah-grid" id="currentAhGrid"></div>
+                </div>
+
+                <div class="ah-stats">
+                    <h3>📈 全场汇总</h3>
+                    <div class="ah-grid" id="totalAhGrid"></div>
+                </div>
+
+                <div class="transcript-section">
+                    <h3>📝 实时转写</h3>
+                    <div class="transcript-box" id="transcriptBox">
+                        <p style="color: #adb5bd; text-align: center; margin-top: 60px;">
+                            点击"开始"按钮后，这里将显示实时转写内容...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SPEAKERS = [
+            { id: 'host', name: '主持人', icon: '🎙️' },
+            { id: 'speaker1', name: '备稿演讲人1', icon: '🎤' },
+            { id: 'speaker2', name: '备稿演讲人2', icon: '🎤' },
+            { id: 'speaker3', name: '备稿演讲人3', icon: '🎤' },
+            { id: 'evaluator1', name: '备稿点评1', icon: '📋' },
+            { id: 'evaluator2', name: '备稿点评2', icon: '📋' },
+            { id: 'evaluator3', name: '备稿点评3', icon: '📋' },
+            { id: 'tt_host', name: '即兴演讲主持人', icon: '🎭' },
+            { id: 'tt_speaker1', name: '即兴演讲人1', icon: '🌟' },
+            { id: 'tt_speaker2', name: '即兴演讲人2', icon: '🌟' },
+            { id: 'tt_speaker3', name: '即兴演讲人3', icon: '🌟' },
+            { id: 'tt_speaker4', name: '即兴演讲人4', icon: '🌟' },
+            { id: 'ge', name: '总评', icon: '🏆' }
+        ];
+
+        const AH_WORDS = [
+            '嗯', '啊', '呃', '额', '那个', '这个', 
+            '就是说', '然后', '其实', '就是', '对吧',
+            '知道', '明白', '一个', '可能', '应该',
+            '或者', '还是', '怎么', '什么'
+        ];
+
+        let currentSpeaker = null;
+        let isListening = false;
+        let recognition = null;
+        let stats = {};
+        let transcriptHistory = [];
+
+        function initStats() {
+            stats = {};
+            SPEAKERS.forEach(function(s) {
+                stats[s.id] = { 
+                    name: s.name, 
+                    total: 0,
+                    words: {} 
+                };
+                AH_WORDS.forEach(function(w) {
+                    stats[s.id].words[w] = 0;
+                });
+            });
+        }
+
+        function initUI() {
+            var speakerGrid = document.getElementById('speakerGrid');
+            speakerGrid.innerHTML = SPEAKERS.map(function(s) { 
+                return '<button class="speaker-btn" data-id="' + s.id + '" onclick="selectSpeaker(\'' + s.id + '\')">' +
+                    '<span>' + s.icon + ' ' + s.name + '</span>' +
+                    '<span class="count" id="count-' + s.id + '">0</span>' +
+                '</button>';
+            }).join('');
+
+            renderAhGrid('currentAhGrid');
+            renderAhGrid('totalAhGrid');
+        }
+
+        function renderAhGrid(containerId) {
+            var container = document.getElementById(containerId);
+            container.innerHTML = AH_WORDS.map(function(w) { 
+                return '<div class="ah-item" id="' + containerId + '-' + w + '">' +
+                    '<div class="word">"' + w + '"</div>' +
+                    '<div class="count" id="' + containerId + '-count-' + w + '">0</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function selectSpeaker(speakerId) {
+            document.querySelectorAll('.speaker-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.dataset.id === speakerId);
+            });
+
+            currentSpeaker = speakerId;
+            var speaker = SPEAKERS.find(function(s) { return s.id === speakerId; });
+            
+            document.getElementById('currentSpeakerName').textContent = speaker.name;
+            updateCurrentStats();
+        }
+
+        function updateCurrentStats() {
+            if (!currentSpeaker) return;
+
+            var speakerStats = stats[currentSpeaker];
+            document.getElementById('currentSpeakerTotal').textContent = speakerStats.total + ' 次哼哈';
+
+            AH_WORDS.forEach(function(w) {
+                var el = document.getElementById('currentAhGrid-count-' + w);
+                if (el) el.textContent = speakerStats.words[w] || 0;
+            });
+        }
+
+        function updateTotalStats() {
+            var totalAll = 0;
+            var totalByWord = {};
+            
+            AH_WORDS.forEach(function(w) { totalByWord[w] = 0; });
+
+            SPEAKERS.forEach(function(s) {
+                totalAll += stats[s.id].total;
+                AH_WORDS.forEach(function(w) {
+                    totalByWord[w] += stats[s.id].words[w] || 0;
+                });
+                
+                var countEl = document.getElementById('count-' + s.id);
+                if (countEl) countEl.textContent = stats[s.id].total;
+            });
+
+            AH_WORDS.forEach(function(w) {
+                var el = document.getElementById('totalAhGrid-count-' + w);
+                if (el) el.textContent = totalByWord[w];
+            });
+        }
+
+        function detectAhWords(text) {
+            var detected = [];
+            
+            AH_WORDS.forEach(function(word) {
+                var regex = new RegExp(word, 'g');
+                var matches = text.match(regex);
+                if (matches) {
+                    detected.push({ word: word, count: matches.length });
+                }
+            });
+
+            return detected;
+        }
+
+        function highlightAhWords(text) {
+            var result = text;
+            AH_WORDS.forEach(function(word) {
+                var regex = new RegExp(word, 'g');
+                result = result.replace(regex, '<span class="ah-word">' + word + '</span>');
+            });
+            return result;
+        }
+
+        function initSpeechRecognition() {
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert('您的浏览器不支持语音识别，请使用 Chrome、Edge 或 Safari 浏览器。');
+                return null;
+            }
+
+            var recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onresult = function(event) {
+                var finalTranscript = '';
+
+                for (var i = event.resultIndex; i < event.results.length; i++) {
+                    var transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    }
+                }
+
+                if (finalTranscript && currentSpeaker) {
+                    processTranscript(finalTranscript);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('语音识别错误:', event.error);
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                    alert('语音识别出错: ' + event.error);
+                }
+            };
+
+            recognition.onend = function() {
+                if (isListening) {
+                    recognition.start();
+                }
+            };
+
+            return recognition;
+        }
+
+        function processTranscript(text) {
+            var detected = detectAhWords(text);
+            
+            if (detected.length > 0) {
+                detected.forEach(function(item) {
+                    stats[currentSpeaker].words[item.word] += item.count;
+                    stats[currentSpeaker].total += item.count;
+                    
+                    var el = document.getElementById('currentAhGrid-' + item.word);
+                    if (el) {
+                        el.classList.add('highlight');
+                        setTimeout(function() { el.classList.remove('highlight'); }, 500);
+                    }
+                });
+
+                updateCurrentStats();
+                updateTotalStats();
+            }
+
+            var speaker = SPEAKERS.find(function(s) { return s.id === currentSpeaker; });
+            var transcriptEntry = {
+                speaker: speaker.name,
+                text: text,
+                ahCount: detected.reduce(function(sum, d) { return sum + d.count; }, 0)
+            };
+            transcriptHistory.push(transcriptEntry);
+
+            updateTranscriptDisplay(transcriptEntry);
+        }
+
+        function updateTranscriptDisplay(entry) {
+            var box = document.getElementById('transcriptBox');
+            
+            if (transcriptHistory.length === 1) {
+                box.innerHTML = '';
+            }
+
+            var segment = document.createElement('div');
+            segment.className = 'segment';
+            segment.innerHTML = '<span class="speaker">' + entry.speaker + ':</span> ' +
+                highlightAhWords(entry.text) +
+                (entry.ahCount > 0 ? '<span style="color: #ff6b6b; font-size: 0.85rem; margin-left: 8px;">(+' + entry.ahCount + ')</span>' : '');
+            
+            box.appendChild(segment);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function startSession() {
+            if (!currentSpeaker) {
+                alert('请先选择当前发言人！');
+                return;
+            }
+
+            recognition = initSpeechRecognition();
+            if (!recognition) return;
+
+            try {
+                recognition.start();
+                isListening = true;
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('exportBtn').disabled = false;
+
+                document.getElementById('statusDot').classList.add('listening');
+                document.getElementById('statusText').textContent = '正在聆听...';
+            } catch (e) {
+                console.error('启动失败:', e);
+                alert('启动语音识别失败，请检查麦克风权限。');
+            }
+        }
+
+        function stopSession() {
+            if (recognition) {
+                recognition.stop();
+                isListening = false;
+            }
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            document.getElementById('statusDot').classList.remove('listening');
+            document.getElementById('statusText').textContent = '已停止';
+        }
+
+        function exportReport() {
+            var report = generateReport();
+            var blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '哼哈官报告_' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-') + '.txt';
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function generateReport() {
+            var date = new Date().toLocaleDateString('zh-CN');
+            var report = '═══════════════════════════════════════\n       Toastmasters 哼哈官报告\n═══════════════════════════════════════\n日期: ' + date + '\n\n';
+
+            var grandTotal = 0;
+            SPEAKERS.forEach(function(s) {
+                if (stats[s.id].total > 0) {
+                    grandTotal += stats[s.id].total;
+                    report += '\n【' + s.icon + ' ' + s.name + '】共 ' + stats[s.id].total + ' 次\n';
+                    
+                    var words = Object.entries(stats[s.id].words)
+                        .filter(function(wc) { return wc[1] > 0; })
+                        .sort(function(a, b) { return b[1] - a[1]; });
+                    
+                    if (words.length > 0) {
+                        report += '  赘语明细: ';
+                        report += words.map(function(wc) { return '"' + wc[0] + '"x' + wc[1]; }).join(', ');
+                        report += '\n';
+                    }
+                }
+            });
+
+            report += '\n───────────────────────────────────────\n全场总计: ' + grandTotal + ' 次赘语\n═══════════════════════════════════════\n\n【温馨提示】\n减少赘语的小技巧:\n• 用短暂停顿代替"嗯""啊"\n• 提前准备演讲稿框架\n• 放慢语速，给自己思考时间\n• 多练习，形成肌肉记忆\n\n═══════════════════════════════════════\n        AI 哼哈官 - 助力卓越演讲\n═══════════════════════════════════════\n';
+
+            return report;
+        }
+
+        function resetAll() {
+            if (transcriptHistory.length > 0) {
+                if (!confirm('确定要重置所有数据吗？当前统计将被清除。')) {
+                    return;
+                }
+            }
+
+            stopSession();
+            initStats();
+            transcriptHistory = [];
+            currentSpeaker = null;
+
+            document.querySelectorAll('.speaker-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+
+            document.querySelectorAll('.speaker-btn .count').forEach(function(el) {
+                el.textContent = '0';
+            });
+
+            document.getElementById('currentSpeakerName').textContent = '请选择发言人';
+            document.getElementById('currentSpeakerTotal').textContent = '0 次哼哈';
+            
+            AH_WORDS.forEach(function(w) {
+                var currentEl = document.getElementById('currentAhGrid-count-' + w);
+                var totalEl = document.getElementById('totalAhGrid-count-' + w);
+                if (currentEl) currentEl.textContent = '0';
+                if (totalEl) totalEl.textContent = '0';
+            });
+
+            document.getElementById('transcriptBox').innerHTML = '<p style="color: #adb5bd; text-align: center; margin-top: 60px;">点击"开始"按钮后，这里将显示实时转写内容...</p>';
+
+            document.getElementById('statusDot').classList.remove('listening');
+            document.getElementById('statusText').textContent = '准备就绪';
+            document.getElementById('exportBtn').disabled = true;
+        }
+
+        window.onload = function() {
+            initStats();
+            initUI();
+        };
+    </script>
+</body>
+</html>
+```
+
+---
+
+## GitHub Pages 部署步骤
+
+### 1. 创建仓库
+
+- 登录 github.com
+- 右上角 **+** → **New repository**
+- 名称填 `ai-ah-counter`
+- 选 **Public**
+- 点击 **Create repository**
+
+### 2. 上传文件
+
+- 在仓库页面点击 **uploading an existing file**
+- 把 `index.html` 文件拖进去
+- 点击 **Commit changes**
+
+### 3. 开启 Pages
+
+- **Settings** → **Pages**
+- Branch 选 `main`
+- Folder 选 `/(root)`
+- 点击 **Save**
+
+### 4. 访问
+
+1-2 分钟后，访问：`https://你的用户名.github.io/ai-ah-counter/`
