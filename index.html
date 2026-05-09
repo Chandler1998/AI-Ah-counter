@@ -1,5 +1,3 @@
-
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -7,750 +5,870 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 哼哈官 - Toastmasters 会议助手</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                         'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
 
+        /* ─── 顶部标题区 ─── */
         header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+        }
+        header h1 { font-size: 2.5rem; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,.2); }
+        header p  { font-size: 1.1rem; opacity: .9; }
+
+        /* ─── 语言切换条（放在 header 正下方） ─── */
+        .lang-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 24px;
+        }
+        .lang-bar button {
+            padding: 10px 28px;
+            border: 2px solid rgba(255,255,255,.55);
+            background: transparent;
+            color: rgba(255,255,255,.75);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .22s;
+            letter-spacing: .5px;
+        }
+        .lang-bar button:first-child  { border-radius: 30px 0 0 30px; }
+        .lang-bar button:last-child   { border-radius: 0 30px 30px 0; }
+        .lang-bar button:not(:last-child) { border-right: none; }
+        .lang-bar button:hover        { background: rgba(255,255,255,.18); color: white; }
+        .lang-bar button.active       {
+            background: white;
+            color: #764ba2;
+            border-color: white;
+            box-shadow: 0 4px 14px rgba(0,0,0,.18);
         }
 
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
+        /* ─── 布局 ─── */
         .main-content {
             display: grid;
             grid-template-columns: 300px 1fr;
             gap: 20px;
         }
-
         .panel {
             background: white;
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,.15);
         }
 
+        /* ─── 控制面板 ─── */
         .control-panel h2 {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 1.3rem; margin-bottom: 20px; color: #333;
+            display: flex; align-items: center; gap: 8px;
         }
-
-        .session-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .session-controls { display: flex; gap: 10px; margin-bottom: 20px; }
 
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            padding: 12px 24px; border: none; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all .3s;
         }
+        .btn-primary  { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+        .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,.4); }
+        .btn-danger   { background: #ff6b6b; color: white; }
+        .btn-danger:hover   { background: #ee5a5a; }
+        .btn-success  { background: #51cf66; color: white; }
+        .btn-success:hover  { background: #40c057; }
+        .btn-secondary{ background: #e9ecef; color: #495057; }
+        .btn-secondary:hover{ background: #dee2e6; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+        /* ─── 发言人列表 ─── */
+        .speaker-section { margin-bottom: 24px; }
+        .speaker-section h3 { font-size: 1rem; color: #666; margin-bottom: 4px; }
+        .rename-tip { font-size: .78rem; color: #adb5bd; margin-bottom: 10px; text-align: right; }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-danger {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #ee5a5a;
-        }
-
-        .btn-success {
-            background: #51cf66;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #40c057;
-        }
-
-        .btn-secondary {
-            background: #e9ecef;
-            color: #495057;
-        }
-
-        .btn-secondary:hover {
-            background: #dee2e6;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .speaker-section {
-            margin-bottom: 24px;
-        }
-
-        .speaker-section h3 {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
-        .speaker-grid {
-            display: grid;
-            gap: 8px;
-        }
+        .speaker-grid { display: grid; gap: 8px; }
 
         .speaker-btn {
-            padding: 14px 16px;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 10px;
+            font-size: .95rem; cursor: pointer; transition: all .2s;
+            text-align: left; display: flex; justify-content: space-between;
+            align-items: center; gap: 6px; position: relative;
         }
-
-        .speaker-btn:hover {
-            background: #e9ecef;
-        }
-
+        .speaker-btn:hover  { background: #e9ecef; }
         .speaker-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white; border-color: transparent;
         }
-
+        .speaker-btn .speaker-label {
+            flex: 1; display: flex; align-items: center; gap: 6px; overflow: hidden;
+        }
         .speaker-btn .count {
-            background: rgba(0,0,0,0.1);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            background: rgba(0,0,0,.1); padding: 4px 10px; border-radius: 12px;
+            font-size: .85rem; font-weight: 600; flex-shrink: 0;
         }
-
-        .speaker-btn.active .count {
-            background: rgba(255,255,255,0.3);
+        .speaker-btn.active .count { background: rgba(255,255,255,.3); }
+        .speaker-btn .del-btn {
+            display: none; background: rgba(255,107,107,.85); color: white;
+            border: none; border-radius: 6px; padding: 2px 7px; font-size: .8rem;
+            cursor: pointer; flex-shrink: 0; line-height: 1.5; transition: background .2s;
         }
-
-        .stats-panel h2 {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            color: #333;
+        .speaker-btn:hover .del-btn   { display: block; }
+        .speaker-btn.active .del-btn  { background: rgba(255,255,255,.35); color: white; }
+        .speaker-btn .name-input {
+            flex: 1; border: none; outline: none; background: transparent;
+            font-size: .95rem; font-weight: 600; color: inherit; min-width: 0;
         }
+        .speaker-btn.active .name-input { color: white; }
 
+        /* ─── 添加角色 ─── */
+        .add-speaker-row { display: flex; gap: 8px; margin-top: 4px; }
+        .add-speaker-row input {
+            flex: 1; padding: 10px 12px; border: 2px dashed #c5c9d6; border-radius: 10px;
+            font-size: .9rem; outline: none; transition: border-color .2s;
+            color: #333; background: #f8f9fa;
+        }
+        .add-speaker-row input:focus   { border-color: #667eea; background: white; }
+        .add-speaker-row input::placeholder { color: #adb5bd; }
+        .add-speaker-row .btn-add {
+            padding: 10px 14px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white; font-size: 1.2rem; cursor: pointer; transition: all .2s; flex-shrink: 0;
+        }
+        .add-speaker-row .btn-add:hover { transform: scale(1.08); box-shadow: 0 4px 12px rgba(102,126,234,.4); }
+
+        /* ─── 统计面板 ─── */
+        .stats-panel h2 { font-size: 1.3rem; margin-bottom: 20px; color: #333; }
         .current-speaker {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            text-align: center;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white; padding: 20px; border-radius: 12px;
+            margin-bottom: 24px; text-align: center;
         }
+        .current-speaker .label  { font-size: .9rem; opacity: .8; margin-bottom: 8px; }
+        .current-speaker .name   { font-size: 1.8rem; font-weight: 700; }
+        .current-speaker .total  { margin-top: 10px; font-size: 2.5rem; font-weight: 800; }
 
-        .current-speaker .label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-bottom: 8px;
-        }
-
-        .current-speaker .name {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .current-speaker .total {
-            margin-top: 10px;
-            font-size: 2.5rem;
-            font-weight: 800;
-        }
-
-        .ah-stats {
-            margin-bottom: 24px;
-        }
-
-        .ah-stats h3 {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
+        .ah-stats { margin-bottom: 24px; }
+        .ah-stats h3 { font-size: 1rem; color: #666; margin-bottom: 12px; }
         .ah-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
             gap: 10px;
         }
-
         .ah-item {
-            background: #f8f9fa;
-            padding: 14px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
+            background: #f8f9fa; padding: 12px; border-radius: 10px;
+            text-align: center; border: 2px solid transparent; transition: all .2s;
         }
+        .ah-item.highlight { background: #fff3bf; border-color: #ffd43b; animation: pulse .5s ease; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+        .ah-item .word  { font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 4px; }
+        .ah-item .count { font-size: 1.8rem; font-weight: 800; color: #667eea; }
 
-        .ah-item.highlight {
-            background: #fff3bf;
-            border-color: #ffd43b;
-            animation: pulse 0.5s ease;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .ah-item .word {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .ah-item .count {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #667eea;
-        }
-
-        .transcript-section h3 {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
+        .transcript-section h3 { font-size: 1rem; color: #666; margin-bottom: 12px; }
         .transcript-box {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 16px;
-            height: 200px;
-            overflow-y: auto;
-            font-size: 0.95rem;
-            line-height: 1.8;
-            border: 1px solid #e9ecef;
+            background: #f8f9fa; border-radius: 10px; padding: 16px; height: 200px;
+            overflow-y: auto; font-size: .95rem; line-height: 1.8; border: 1px solid #e9ecef;
         }
-
         .transcript-box .segment {
-            margin-bottom: 8px;
-            padding: 8px 12px;
-            background: white;
-            border-radius: 8px;
-            border-left: 3px solid #667eea;
+            margin-bottom: 8px; padding: 8px 12px; background: white;
+            border-radius: 8px; border-left: 3px solid #667eea;
         }
-
-        .transcript-box .speaker {
-            font-weight: 600;
-            color: #667eea;
-            margin-right: 8px;
-        }
-
+        .transcript-box .speaker { font-weight: 600; color: #667eea; margin-right: 8px; }
         .transcript-box .ah-word {
-            background: #fff3bf;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
+            background: #fff3bf; padding: 2px 6px; border-radius: 4px; font-weight: 600;
         }
 
-        @media (max-width: 900px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
+        @media (max-width: 900px) { .main-content { grid-template-columns: 1fr; } }
 
         .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            padding: 12px 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 20px;
+            padding: 12px 16px; background: #f8f9fa; border-radius: 8px;
         }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #adb5bd; }
+        .status-dot.listening { background: #51cf66; animation: blink 1s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #adb5bd;
-        }
+        .export-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; }
 
-        .status-dot.listening {
-            background: #51cf66;
-            animation: blink 1s infinite;
+        /* 语言徽章（显示当前模式） */
+        .lang-badge {
+            display: inline-block;
+            font-size: .75rem; font-weight: 700;
+            padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+            vertical-align: middle;
         }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .export-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e9ecef;
-        }
+        .lang-badge.cn  { background: #e7f5ff; color: #1971c2; }
+        .lang-badge.en  { background: #fff0f6; color: #c2255c; }
+        .lang-badge.both{ background: #f3f0ff; color: #5c3bc2; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎯 AI 哼哈官</h1>
-            <p>Toastmasters 会议赘语统计助手</p>
-        </header>
+<div class="container">
 
-        <div class="main-content">
-            <div class="panel control-panel">
-                <h2>⚙️ 会议控制</h2>
-                
-                <div class="status">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">准备就绪</span>
-                </div>
+    <!-- ══ 标题 ══ -->
+    <header>
+        <h1>🎯 AI 哼哈官</h1>
+        <p>Toastmasters 会议赘语统计助手</p>
+    </header>
 
-                <div class="session-controls">
-                    <button class="btn btn-primary" id="startBtn" onclick="startSession()">
-                        🎤 开始
-                    </button>
-                    <button class="btn btn-danger" id="stopBtn" onclick="stopSession()" disabled>
-                        ⏹️ 停止
-                    </button>
-                </div>
+    <!-- ══ 语言切换条（最显眼位置）══ -->
+    <div class="lang-bar">
+        <button id="langBtnBoth" class="active" onclick="setLang('both')">🌐 中英双语</button>
+        <button id="langBtnCN"   onclick="setLang('cn')">🇨🇳 仅中文</button>
+        <button id="langBtnEN"   onclick="setLang('en')">🇺🇸 仅英文</button>
+    </div>
 
-                <div class="speaker-section">
-                    <h3>👤 当前发言人</h3>
-                    <div class="speaker-grid" id="speakerGrid"></div>
-                </div>
+    <!-- ══ 主内容 ══ -->
+    <div class="main-content">
 
-                <div class="export-section">
-                    <button class="btn btn-success" onclick="exportReport()" id="exportBtn" disabled>
-                        📊 导出报告
-                    </button>
-                    <button class="btn btn-secondary" onclick="resetAll()" style="margin-left: 10px;">
-                        🔄 重置
-                    </button>
+        <!-- 左：控制面板 -->
+        <div class="panel control-panel">
+            <h2>⚙️ 会议控制</h2>
+
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">准备就绪</span>
+            </div>
+
+            <div class="session-controls">
+                <button class="btn btn-primary" id="startBtn" onclick="startSession()">🎤 开始</button>
+                <button class="btn btn-danger"  id="stopBtn"  onclick="stopSession()" disabled>⏹️ 停止</button>
+            </div>
+
+            <div class="speaker-section">
+                <h3>👤 当前发言人</h3>
+                <p class="rename-tip">💡 双击角色名可重命名</p>
+                <div class="speaker-grid" id="speakerGrid"></div>
+
+                <div class="add-speaker-row" style="margin-top:10px;">
+                    <input type="text" id="newSpeakerInput" placeholder="输入角色名称…" maxlength="20"
+                           onkeydown="if(event.key==='Enter') addCustomSpeaker()">
+                    <button class="btn-add" onclick="addCustomSpeaker()" title="添加角色">＋</button>
                 </div>
             </div>
 
-            <div class="panel stats-panel">
-                <h2>📊 实时统计</h2>
+            <div class="export-section">
+                <button class="btn btn-success"   onclick="exportReport()" id="exportBtn" disabled>📊 导出报告</button>
+                <button class="btn btn-secondary" onclick="resetAll()" style="margin-left:10px;">🔄 重置</button>
+            </div>
+        </div>
 
-                <div class="current-speaker">
-                    <div class="label">当前发言人</div>
-                    <div class="name" id="currentSpeakerName">请选择发言人</div>
-                    <div class="total" id="currentSpeakerTotal">0 次哼哈</div>
-                </div>
+        <!-- 右：统计面板 -->
+        <div class="panel stats-panel">
+            <h2>📊 实时统计 <span class="lang-badge both" id="langBadge">中英双语</span></h2>
 
-                <div class="ah-stats">
-                    <h3>🗣️ 当前发言人哼哈词统计</h3>
-                    <div class="ah-grid" id="currentAhGrid"></div>
-                </div>
+            <div class="current-speaker">
+                <div class="label">当前发言人</div>
+                <div class="name"  id="currentSpeakerName">请选择发言人</div>
+                <div class="total" id="currentSpeakerTotal">0 次哼哈</div>
+            </div>
 
-                <div class="ah-stats">
-                    <h3>📈 全场汇总</h3>
-                    <div class="ah-grid" id="totalAhGrid"></div>
-                </div>
+            <div class="ah-stats">
+                <h3>🗣️ 当前发言人哼哈词统计</h3>
+                <div class="ah-grid" id="currentAhGrid"></div>
+            </div>
 
-                <div class="transcript-section">
-                    <h3>📝 实时转写</h3>
-                    <div class="transcript-box" id="transcriptBox">
-                        <p style="color: #adb5bd; text-align: center; margin-top: 60px;">
-                            点击"开始"按钮后，这里将显示实时转写内容...
-                        </p>
-                    </div>
+            <div class="ah-stats">
+                <h3>📈 全场汇总</h3>
+                <div class="ah-grid" id="totalAhGrid"></div>
+            </div>
+
+            <div class="transcript-section">
+                <h3>📝 实时转写</h3>
+                <div class="transcript-box" id="transcriptBox">
+                    <p style="color:#adb5bd;text-align:center;margin-top:60px;">
+                        点击"开始"按钮后，这里将显示实时转写内容...
+                    </p>
                 </div>
             </div>
         </div>
+
     </div>
+</div>
 
-    <script>
-        const SPEAKERS = [
-            { id: 'host', name: '主持人', icon: '🎙️' },
-            { id: 'speaker1', name: '备稿演讲人1', icon: '🎤' },
-            { id: 'speaker2', name: '备稿演讲人2', icon: '🎤' },
-            { id: 'speaker3', name: '备稿演讲人3', icon: '🎤' },
-            { id: 'evaluator1', name: '备稿点评1', icon: '📋' },
-            { id: 'evaluator2', name: '备稿点评2', icon: '📋' },
-            { id: 'evaluator3', name: '备稿点评3', icon: '📋' },
-            { id: 'tt_host', name: '即兴演讲主持人', icon: '🎭' },
-            { id: 'tt_speaker1', name: '即兴演讲人1', icon: '🌟' },
-            { id: 'tt_speaker2', name: '即兴演讲人2', icon: '🌟' },
-            { id: 'tt_speaker3', name: '即兴演讲人3', icon: '🌟' },
-            { id: 'tt_speaker4', name: '即兴演讲人4', icon: '🌟' },
-            { id: 'ge', name: '总评', icon: '🏆' }
-        ];
+<script>
+/* ═══════════════════════════════════════════════
+   哼哈词词典（中 / 英）
+═══════════════════════════════════════════════ */
+var AH_WORDS_CN = [
+    '嗯', '啊', '呃', '额', '那个', '这个',
+    '就是说', '然后', '其实', '就是', '对吧',
+    '知道', '明白', '一个', '可能', '应该',
+    '或者', '还是', '怎么', '什么'
+];
 
-        const AH_WORDS = [
-            '嗯', '啊', '呃', '额', '那个', '这个', 
-            '就是说', '然后', '其实', '就是', '对吧',
-            '知道', '明白', '一个', '可能', '应该',
-            '或者', '还是', '怎么', '什么'
-        ];
+var AH_WORDS_EN = [
+    'you know', 'i mean', 'kind of', 'sort of',
+    'basically', 'literally', 'actually', 'honestly',
+    'right', 'like', 'um', 'uh', 'er', 'ah',
+    'so', 'well', 'okay'
+];
 
-        let currentSpeaker = null;
-        let isListening = false;
-        let recognition = null;
-        let stats = {};
-        let transcriptHistory = [];
+/* 当前激活词表（由语言模式决定） */
+var currentLang = 'both';   // 'both' | 'cn' | 'en'
+var AH_WORDS    = [];        // 实时词表，随语言切换更新
 
-        function initStats() {
-            stats = {};
-            SPEAKERS.forEach(function(s) {
-                stats[s.id] = { 
-                    name: s.name, 
-                    total: 0,
-                    words: {} 
-                };
-                AH_WORDS.forEach(function(w) {
-                    stats[s.id].words[w] = 0;
-                });
-            });
-        }
+function buildWordList(lang) {
+    if (lang === 'cn')   return AH_WORDS_CN.slice();
+    if (lang === 'en')   return AH_WORDS_EN.slice();
+    /* both：先长词后短词，避免子串误匹配 */
+    var all = AH_WORDS_CN.concat(AH_WORDS_EN);
+    all.sort(function(a,b){ return b.length - a.length; });
+    return all;
+}
 
-        function initUI() {
-            var speakerGrid = document.getElementById('speakerGrid');
-            speakerGrid.innerHTML = SPEAKERS.map(function(s) { 
-                return '<button class="speaker-btn" data-id="' + s.id + '" onclick="selectSpeaker(\'' + s.id + '\')">' +
-                    '<span>' + s.icon + ' ' + s.name + '</span>' +
-                    '<span class="count" id="count-' + s.id + '">0</span>' +
-                '</button>';
-            }).join('');
+/* 语言 → 识别 lang 代码 */
+var LANG_CODE = { both: 'zh-CN', cn: 'zh-CN', en: 'en-US' };
 
-            renderAhGrid('currentAhGrid');
-            renderAhGrid('totalAhGrid');
-        }
+/* ═══════════════════════════════════════════════
+   默认角色
+═══════════════════════════════════════════════ */
+var DEFAULT_SPEAKERS = [
+    { id:'host',        name:'主持人',        icon:'🎙️', custom:false },
+    { id:'speaker1',    name:'备稿演讲人1',    icon:'🎤', custom:false },
+    { id:'speaker2',    name:'备稿演讲人2',    icon:'🎤', custom:false },
+    { id:'evaluator1',  name:'备稿点评1',      icon:'📋', custom:false },
+    { id:'evaluator2',  name:'备稿点评2',      icon:'📋', custom:false },
+    { id:'tt_host',     name:'即兴演讲主持人', icon:'🎭', custom:false },
+    { id:'tt_speaker1', name:'即兴演讲人1',    icon:'🌟', custom:false },
+    { id:'tt_speaker2', name:'即兴演讲人2',    icon:'🌟', custom:false },
+    { id:'tt_speaker3', name:'即兴演讲人3',    icon:'🌟', custom:false },
+    { id:'ge',          name:'总评',           icon:'🏆', custom:false }
+];
 
-        function renderAhGrid(containerId) {
-            var container = document.getElementById(containerId);
-            container.innerHTML = AH_WORDS.map(function(w) { 
-                return '<div class="ah-item" id="' + containerId + '-' + w + '">' +
-                    '<div class="word">"' + w + '"</div>' +
-                    '<div class="count" id="' + containerId + '-count-' + w + '">0</div>' +
-                '</div>';
-            }).join('');
-        }
+var speakers       = DEFAULT_SPEAKERS.map(function(s){ return Object.assign({},s); });
+var customIdCounter = 1;
+var currentSpeaker  = null;
+var isListening     = false;
+var recognition     = null;
+var stats           = {};
+var transcriptHistory = [];
 
-        function selectSpeaker(speakerId) {
-            document.querySelectorAll('.speaker-btn').forEach(function(btn) {
-                btn.classList.toggle('active', btn.dataset.id === speakerId);
-            });
+/* ═══════════════════════════════════════════════
+   语言切换
+═══════════════════════════════════════════════ */
+var LANG_LABEL = {
+    both: { text:'中英双语', cls:'both' },
+    cn:   { text:'仅中文',   cls:'cn'   },
+    en:   { text:'仅英文',   cls:'en'   }
+};
 
-            currentSpeaker = speakerId;
-            var speaker = SPEAKERS.find(function(s) { return s.id === speakerId; });
-            
-            document.getElementById('currentSpeakerName').textContent = speaker.name;
-            updateCurrentStats();
-        }
+function setLang(lang) {
+    currentLang = lang;
+    AH_WORDS    = buildWordList(lang);
 
-        function updateCurrentStats() {
-            if (!currentSpeaker) return;
+    /* 更新按钮高亮 */
+    document.getElementById('langBtnBoth').classList.toggle('active', lang==='both');
+    document.getElementById('langBtnCN'  ).classList.toggle('active', lang==='cn');
+    document.getElementById('langBtnEN'  ).classList.toggle('active', lang==='en');
 
-            var speakerStats = stats[currentSpeaker];
-            document.getElementById('currentSpeakerTotal').textContent = speakerStats.total + ' 次哼哈';
+    /* 更新徽章 */
+    var badge = document.getElementById('langBadge');
+    badge.textContent = LANG_LABEL[lang].text;
+    badge.className   = 'lang-badge ' + LANG_LABEL[lang].cls;
 
-            AH_WORDS.forEach(function(w) {
-                var el = document.getElementById('currentAhGrid-count-' + w);
-                if (el) el.textContent = speakerStats.words[w] || 0;
-            });
-        }
+    /* 重建统计词表（保留已有数据，新词从0开始） */
+    rebuildStatsWords();
 
-        function updateTotalStats() {
-            var totalAll = 0;
-            var totalByWord = {};
-            
-            AH_WORDS.forEach(function(w) { totalByWord[w] = 0; });
+    /* 重新渲染哼哈格 */
+    renderAhGrid('currentAhGrid');
+    renderAhGrid('totalAhGrid');
+    updateCurrentStats();
+    updateTotalStats();
 
-            SPEAKERS.forEach(function(s) {
-                totalAll += stats[s.id].total;
-                AH_WORDS.forEach(function(w) {
-                    totalByWord[w] += stats[s.id].words[w] || 0;
-                });
-                
-                var countEl = document.getElementById('count-' + s.id);
-                if (countEl) countEl.textContent = stats[s.id].total;
-            });
+    /* 若正在监听，重启 recognition 以切换语言 */
+    if (isListening && recognition) {
+        recognition.stop();   /* onend 会自动重启，下次 start 时用新 lang */
+    }
+}
 
-            AH_WORDS.forEach(function(w) {
-                var el = document.getElementById('totalAhGrid-count-' + w);
-                if (el) el.textContent = totalByWord[w];
-            });
-        }
-
-        function detectAhWords(text) {
-            var detected = [];
-            
-            AH_WORDS.forEach(function(word) {
-                var regex = new RegExp(word, 'g');
-                var matches = text.match(regex);
-                if (matches) {
-                    detected.push({ word: word, count: matches.length });
-                }
-            });
-
-            return detected;
-        }
-
-        function highlightAhWords(text) {
-            var result = text;
-            AH_WORDS.forEach(function(word) {
-                var regex = new RegExp(word, 'g');
-                result = result.replace(regex, '<span class="ah-word">' + word + '</span>');
-            });
-            return result;
-        }
-
-        function initSpeechRecognition() {
-            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                alert('您的浏览器不支持语音识别，请使用 Chrome、Edge 或 Safari 浏览器。');
-                return null;
+/* 切换语言后，为每个 speaker 的 words 补全新词 */
+function rebuildStatsWords() {
+    Object.keys(stats).forEach(function(id) {
+        AH_WORDS.forEach(function(w) {
+            if (stats[id].words[w] === undefined) {
+                stats[id].words[w] = 0;
             }
+        });
+    });
+}
 
-            var recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'zh-CN';
+/* ═══════════════════════════════════════════════
+   统计初始化
+═══════════════════════════════════════════════ */
+function ensureSpeakerStats(speakerId, speakerName) {
+    if (!stats[speakerId]) {
+        stats[speakerId] = { name: speakerName, total: 0, words: {} };
+    }
+    AH_WORDS.forEach(function(w) {
+        if (stats[speakerId].words[w] === undefined)
+            stats[speakerId].words[w] = 0;
+    });
+}
 
-            recognition.onresult = function(event) {
-                var finalTranscript = '';
+function initStats() {
+    stats = {};
+    speakers.forEach(function(s) { ensureSpeakerStats(s.id, s.name); });
+}
 
-                for (var i = event.resultIndex; i < event.results.length; i++) {
-                    var transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                    }
-                }
+/* ═══════════════════════════════════════════════
+   UI 渲染
+═══════════════════════════════════════════════ */
+function renderSpeakerGrid() {
+    var grid = document.getElementById('speakerGrid');
+    grid.innerHTML = '';
 
-                if (finalTranscript && currentSpeaker) {
-                    processTranscript(finalTranscript);
-                }
-            };
+    speakers.forEach(function(s) {
+        var btn = document.createElement('button');
+        btn.className  = 'speaker-btn';
+        btn.dataset.id = s.id;
+        if (currentSpeaker === s.id) btn.classList.add('active');
 
-            recognition.onerror = function(event) {
-                console.error('语音识别错误:', event.error);
-                if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                    alert('语音识别出错: ' + event.error);
-                }
-            };
+        btn.addEventListener('click', function(e) {
+            if (e.target.classList.contains('del-btn'))   return;
+            if (e.target.classList.contains('name-input')) return;
+            selectSpeaker(s.id);
+        });
 
-            recognition.onend = function() {
-                if (isListening) {
-                    recognition.start();
-                }
-            };
+        /* 图标 */
+        var iconSpan = document.createElement('span');
+        iconSpan.textContent   = s.icon + ' ';
+        iconSpan.style.flexShrink = '0';
 
-            return recognition;
+        /* 可编辑名称 */
+        var nameInput = document.createElement('input');
+        nameInput.className = 'name-input';
+        nameInput.type      = 'text';
+        nameInput.value     = s.name;
+        nameInput.maxLength = 20;
+        nameInput.title     = '双击可重命名';
+        nameInput.readOnly  = true;
+
+        nameInput.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            nameInput.readOnly = false;
+            nameInput.focus(); nameInput.select();
+        });
+
+        function saveName() {
+            nameInput.readOnly = true;
+            var newName = nameInput.value.trim();
+            if (!newName) { nameInput.value = s.name; return; }
+            s.name = newName;
+            if (stats[s.id]) stats[s.id].name = newName;
+            if (currentSpeaker === s.id)
+                document.getElementById('currentSpeakerName').textContent = newName;
         }
+        nameInput.addEventListener('blur', saveName);
+        nameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter')  { e.preventDefault(); saveName(); nameInput.blur(); }
+            if (e.key === 'Escape') { nameInput.value = s.name; nameInput.blur(); }
+        });
 
-        function processTranscript(text) {
-            var detected = detectAhWords(text);
-            
-            if (detected.length > 0) {
-                detected.forEach(function(item) {
-                    stats[currentSpeaker].words[item.word] += item.count;
-                    stats[currentSpeaker].total += item.count;
-                    
-                    var el = document.getElementById('currentAhGrid-' + item.word);
-                    if (el) {
-                        el.classList.add('highlight');
-                        setTimeout(function() { el.classList.remove('highlight'); }, 500);
-                    }
-                });
+        var label = document.createElement('span');
+        label.className = 'speaker-label';
+        label.appendChild(iconSpan);
+        label.appendChild(nameInput);
 
-                updateCurrentStats();
-                updateTotalStats();
+        /* 计数 */
+        var countSpan = document.createElement('span');
+        countSpan.className   = 'count';
+        countSpan.id          = 'count-' + s.id;
+        countSpan.textContent = (stats[s.id] && stats[s.id].total) || 0;
+
+        /* 删除 */
+        var delBtn = document.createElement('button');
+        delBtn.className   = 'del-btn';
+        delBtn.textContent = '✕';
+        delBtn.title       = '删除该角色';
+        delBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); deleteSpeaker(s.id);
+        });
+
+        btn.appendChild(label);
+        btn.appendChild(countSpan);
+        btn.appendChild(delBtn);
+        grid.appendChild(btn);
+    });
+}
+
+/* 生成哼哈格 DOM（用词 id 做安全 key） */
+function wordToId(w) {
+    /* 把词转成安全的 CSS id 片段：非 ASCII 转 codePoint，英文直接用 */
+    return w.split('').map(function(c) {
+        return c.charCodeAt(0) > 127 ? 'u' + c.codePointAt(0) : c;
+    }).join('');
+}
+
+function renderAhGrid(containerId) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = AH_WORDS.map(function(w) {
+        var wid = wordToId(w);
+        return '<div class="ah-item" id="' + containerId + '-' + wid + '">' +
+            '<div class="word">' + w + '</div>' +
+            '<div class="count" id="' + containerId + '-count-' + wid + '">0</div>' +
+        '</div>';
+    }).join('');
+}
+
+function initUI() {
+    renderSpeakerGrid();
+    renderAhGrid('currentAhGrid');
+    renderAhGrid('totalAhGrid');
+}
+
+/* ═══════════════════════════════════════════════
+   自定义角色
+═══════════════════════════════════════════════ */
+function addCustomSpeaker() {
+    var input = document.getElementById('newSpeakerInput');
+    var name  = input.value.trim();
+    if (!name) { input.focus(); return; }
+
+    if (speakers.some(function(s){ return s.name === name; })) {
+        alert('已存在同名角色：' + name); return;
+    }
+
+    var newId  = 'custom_' + (customIdCounter++);
+    var icons  = ['👤','💬','🗣️','📢','✨','🌈'];
+    var icon   = icons[(customIdCounter - 2) % icons.length];
+
+    speakers.push({ id:newId, name:name, icon:icon, custom:true });
+    ensureSpeakerStats(newId, name);
+
+    input.value = '';
+    renderSpeakerGrid();
+    selectSpeaker(newId);
+}
+
+function deleteSpeaker(speakerId) {
+    var s = speakers.find(function(sp){ return sp.id === speakerId; });
+    if (!s) return;
+    var hasData = stats[speakerId] && stats[speakerId].total > 0;
+    if (hasData && !confirm('角色「' + s.name + '」已有 ' + stats[speakerId].total + ' 次赘语记录，确认删除？')) return;
+
+    speakers = speakers.filter(function(sp){ return sp.id !== speakerId; });
+    delete stats[speakerId];
+
+    if (currentSpeaker === speakerId) {
+        currentSpeaker = null;
+        document.getElementById('currentSpeakerName').textContent = '请选择发言人';
+        document.getElementById('currentSpeakerTotal').textContent = '0 次哼哈';
+        resetCurrentAhGrid();
+    }
+    renderSpeakerGrid();
+    updateTotalStats();
+}
+
+/* ═══════════════════════════════════════════════
+   发言人选择
+═══════════════════════════════════════════════ */
+function selectSpeaker(speakerId) {
+    currentSpeaker = speakerId;
+    var speaker = speakers.find(function(s){ return s.id === speakerId; });
+    if (!speaker) return;
+    renderSpeakerGrid();
+    document.getElementById('currentSpeakerName').textContent = speaker.name;
+    updateCurrentStats();
+}
+
+/* ═══════════════════════════════════════════════
+   统计更新
+═══════════════════════════════════════════════ */
+function resetCurrentAhGrid() {
+    AH_WORDS.forEach(function(w) {
+        var el = document.getElementById('currentAhGrid-count-' + wordToId(w));
+        if (el) el.textContent = '0';
+    });
+}
+
+function updateCurrentStats() {
+    if (!currentSpeaker || !stats[currentSpeaker]) return;
+    var sp = stats[currentSpeaker];
+    document.getElementById('currentSpeakerTotal').textContent = sp.total + ' 次哼哈';
+    AH_WORDS.forEach(function(w) {
+        var el = document.getElementById('currentAhGrid-count-' + wordToId(w));
+        if (el) el.textContent = sp.words[w] || 0;
+    });
+}
+
+function updateTotalStats() {
+    var totalByWord = {};
+    AH_WORDS.forEach(function(w){ totalByWord[w] = 0; });
+
+    speakers.forEach(function(s) {
+        if (!stats[s.id]) return;
+        AH_WORDS.forEach(function(w){
+            totalByWord[w] += stats[s.id].words[w] || 0;
+        });
+        var el = document.getElementById('count-' + s.id);
+        if (el) el.textContent = stats[s.id].total;
+    });
+
+    AH_WORDS.forEach(function(w) {
+        var el = document.getElementById('totalAhGrid-count-' + wordToId(w));
+        if (el) el.textContent = totalByWord[w];
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   赘词检测 & 高亮
+═══════════════════════════════════════════════ */
+function detectAhWords(text) {
+    var lower    = text.toLowerCase();
+    var detected = [];
+
+    /* 按词长降序检测，避免 "you know" 被 "know" 重复计 */
+    var sorted = AH_WORDS.slice().sort(function(a,b){ return b.length-a.length; });
+
+    sorted.forEach(function(word) {
+        var flags  = word.charCodeAt(0) > 127 ? 'g' : 'gi';
+        /* 英文用单词边界，中文直接匹配 */
+        var pattern = word.charCodeAt(0) > 127
+            ? word
+            : '\\b' + word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b';
+        var regex   = new RegExp(pattern, flags);
+        var src     = word.charCodeAt(0) > 127 ? text : lower;
+        var matches = src.match(regex);
+        if (matches) detected.push({ word: word, count: matches.length });
+    });
+    return detected;
+}
+
+function highlightAhWords(text) {
+    var result = text;
+    var sorted = AH_WORDS.slice().sort(function(a,b){ return b.length-a.length; });
+    sorted.forEach(function(word) {
+        var flags   = word.charCodeAt(0) > 127 ? 'g' : 'gi';
+        var pattern = word.charCodeAt(0) > 127
+            ? word
+            : '\\b' + word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b';
+        var regex   = new RegExp(pattern, flags);
+        result = result.replace(regex, function(m){
+            return '<span class="ah-word">' + m + '</span>';
+        });
+    });
+    return result;
+}
+
+/* ═══════════════════════════════════════════════
+   语音识别
+═══════════════════════════════════════════════ */
+function getLangCode() {
+    /* 双语模式：中文识别顺便捎带英文效果一般，先用 zh-CN
+       如需高精度英文，必须单独切 en-US */
+    return LANG_CODE[currentLang];
+}
+
+function initSpeechRecognition() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('您的浏览器不支持语音识别，请使用 Chrome、Edge 或 Safari 浏览器。');
+        return null;
+    }
+    var rec = new SpeechRecognition();
+    rec.continuous      = true;
+    rec.interimResults  = true;
+    rec.lang            = getLangCode();
+
+    rec.onresult = function(event) {
+        var finalTranscript = '';
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal)
+                finalTranscript += event.results[i][0].transcript;
+        }
+        if (finalTranscript && currentSpeaker) processTranscript(finalTranscript);
+    };
+
+    rec.onerror = function(event) {
+        console.error('语音识别错误:', event.error);
+        if (event.error !== 'no-speech' && event.error !== 'aborted')
+            alert('语音识别出错: ' + event.error);
+    };
+
+    rec.onend = function() {
+        if (isListening) {
+            /* 用最新 lang 重启，支持中途切语言 */
+            rec.lang = getLangCode();
+            rec.start();
+        }
+    };
+
+    return rec;
+}
+
+function processTranscript(text) {
+    var detected = detectAhWords(text);
+
+    if (detected.length > 0) {
+        detected.forEach(function(item) {
+            if (stats[currentSpeaker].words[item.word] === undefined)
+                stats[currentSpeaker].words[item.word] = 0;
+            stats[currentSpeaker].words[item.word] += item.count;
+            stats[currentSpeaker].total             += item.count;
+
+            var el = document.getElementById('currentAhGrid-' + wordToId(item.word));
+            if (el) {
+                el.classList.add('highlight');
+                setTimeout(function(){ el.classList.remove('highlight'); }, 500);
             }
+        });
+        updateCurrentStats();
+        updateTotalStats();
+    }
 
-            var speaker = SPEAKERS.find(function(s) { return s.id === currentSpeaker; });
-            var transcriptEntry = {
-                speaker: speaker.name,
-                text: text,
-                ahCount: detected.reduce(function(sum, d) { return sum + d.count; }, 0)
-            };
-            transcriptHistory.push(transcriptEntry);
+    var speaker = speakers.find(function(s){ return s.id === currentSpeaker; });
+    var entry = {
+        speaker:  speaker ? speaker.name : currentSpeaker,
+        text:     text,
+        ahCount:  detected.reduce(function(sum,d){ return sum+d.count; }, 0)
+    };
+    transcriptHistory.push(entry);
+    updateTranscriptDisplay(entry);
+}
 
-            updateTranscriptDisplay(transcriptEntry);
+function updateTranscriptDisplay(entry) {
+    var box = document.getElementById('transcriptBox');
+    if (transcriptHistory.length === 1) box.innerHTML = '';
+
+    var seg = document.createElement('div');
+    seg.className = 'segment';
+    seg.innerHTML = '<span class="speaker">' + entry.speaker + ':</span> '
+        + highlightAhWords(entry.text)
+        + (entry.ahCount > 0
+            ? '<span style="color:#ff6b6b;font-size:.85rem;margin-left:8px;">(+' + entry.ahCount + ')</span>'
+            : '');
+    box.appendChild(seg);
+    box.scrollTop = box.scrollHeight;
+}
+
+/* ═══════════════════════════════════════════════
+   会议控制
+═══════════════════════════════════════════════ */
+function startSession() {
+    if (!currentSpeaker) { alert('请先选择当前发言人！'); return; }
+
+    recognition = initSpeechRecognition();
+    if (!recognition) return;
+
+    try {
+        recognition.start();
+        isListening = true;
+        document.getElementById('startBtn').disabled  = true;
+        document.getElementById('stopBtn').disabled   = false;
+        document.getElementById('exportBtn').disabled = false;
+        document.getElementById('statusDot').classList.add('listening');
+        document.getElementById('statusText').textContent = '正在聆听...';
+    } catch(e) {
+        console.error('启动失败:', e);
+        alert('启动语音识别失败，请检查麦克风权限。');
+    }
+}
+
+function stopSession() {
+    if (recognition) { recognition.stop(); isListening = false; }
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled  = true;
+    document.getElementById('statusDot').classList.remove('listening');
+    document.getElementById('statusText').textContent = '已停止';
+}
+
+/* ═══════════════════════════════════════════════
+   导出报告
+═══════════════════════════════════════════════ */
+function exportReport() {
+    var report = generateReport();
+    var blob   = new Blob([report], { type:'text/plain;charset=utf-8' });
+    var url    = URL.createObjectURL(blob);
+    var a      = document.createElement('a');
+    a.href     = url;
+    a.download = '哼哈官报告_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function generateReport() {
+    var date  = new Date().toLocaleDateString('zh-CN');
+    var modeLabel = { both:'中英双语', cn:'仅中文', en:'仅英文' };
+    var report = '═══════════════════════════════════════\n'
+        + '       Toastmasters 哼哈官报告\n'
+        + '═══════════════════════════════════════\n'
+        + '日期: ' + date + '  语言模式: ' + modeLabel[currentLang] + '\n\n';
+
+    var grandTotal = 0;
+    speakers.forEach(function(s) {
+        if (!stats[s.id] || stats[s.id].total === 0) return;
+        grandTotal += stats[s.id].total;
+        report += '\n【' + s.icon + ' ' + s.name + '】共 ' + stats[s.id].total + ' 次\n';
+        var words = Object.entries(stats[s.id].words)
+            .filter(function(wc){ return wc[1] > 0; })
+            .sort(function(a,b){ return b[1]-a[1]; });
+        if (words.length > 0) {
+            report += '  赘语明细: '
+                + words.map(function(wc){ return '"' + wc[0] + '"x' + wc[1]; }).join(', ')
+                + '\n';
         }
+    });
 
-        function updateTranscriptDisplay(entry) {
-            var box = document.getElementById('transcriptBox');
-            
-            if (transcriptHistory.length === 1) {
-                box.innerHTML = '';
-            }
+    report += '\n───────────────────────────────────────\n'
+        + '全场总计: ' + grandTotal + ' 次赘语\n'
+        + '═══════════════════════════════════════\n\n'
+        + '【温馨提示】\n减少赘语的小技巧:\n'
+        + '• 用短暂停顿代替"嗯""啊"\n'
+        + '• 提前准备演讲稿框架\n'
+        + '• 放慢语速，给自己思考时间\n'
+        + '• 多练习，形成肌肉记忆\n\n'
+        + '═══════════════════════════════════════\n'
+        + '        AI 哼哈官 - 助力卓越演讲\n'
+        + '═══════════════════════════════════════\n';
+    return report;
+}
 
-            var segment = document.createElement('div');
-            segment.className = 'segment';
-            segment.innerHTML = '<span class="speaker">' + entry.speaker + ':</span> ' +
-                highlightAhWords(entry.text) +
-                (entry.ahCount > 0 ? '<span style="color: #ff6b6b; font-size: 0.85rem; margin-left: 8px;">(+' + entry.ahCount + ')</span>' : '');
-            
-            box.appendChild(segment);
-            box.scrollTop = box.scrollHeight;
-        }
+/* ═══════════════════════════════════════════════
+   重置
+═══════════════════════════════════════════════ */
+function resetAll() {
+    if (transcriptHistory.length > 0) {
+        if (!confirm('确定要重置所有数据吗？当前统计将被清除。')) return;
+    }
+    stopSession();
 
-        function startSession() {
-            if (!currentSpeaker) {
-                alert('请先选择当前发言人！');
-                return;
-            }
+    speakers        = DEFAULT_SPEAKERS.map(function(s){ return Object.assign({},s); });
+    customIdCounter = 1;
 
-            recognition = initSpeechRecognition();
-            if (!recognition) return;
+    initStats();
+    transcriptHistory = [];
+    currentSpeaker    = null;
 
-            try {
-                recognition.start();
-                isListening = true;
+    renderSpeakerGrid();
+    renderAhGrid('currentAhGrid');
+    renderAhGrid('totalAhGrid');
 
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = false;
-                document.getElementById('exportBtn').disabled = false;
+    document.getElementById('currentSpeakerName').textContent  = '请选择发言人';
+    document.getElementById('currentSpeakerTotal').textContent = '0 次哼哈';
+    document.getElementById('transcriptBox').innerHTML =
+        '<p style="color:#adb5bd;text-align:center;margin-top:60px;">点击"开始"按钮后，这里将显示实时转写内容...</p>';
+    document.getElementById('statusDot').classList.remove('listening');
+    document.getElementById('statusText').textContent = '准备就绪';
+    document.getElementById('exportBtn').disabled     = true;
+}
 
-                document.getElementById('statusDot').classList.add('listening');
-                document.getElementById('statusText').textContent = '正在聆听...';
-            } catch (e) {
-                console.error('启动失败:', e);
-                alert('启动语音识别失败，请检查麦克风权限。');
-            }
-        }
-
-        function stopSession() {
-            if (recognition) {
-                recognition.stop();
-                isListening = false;
-            }
-
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
-
-            document.getElementById('statusDot').classList.remove('listening');
-            document.getElementById('statusText').textContent = '已停止';
-        }
-
-        function exportReport() {
-            var report = generateReport();
-            var blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
-            var url = URL.createObjectURL(blob);
-            
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = '哼哈官报告_' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-') + '.txt';
-            a.click();
-            
-            URL.revokeObjectURL(url);
-        }
-
-        function generateReport() {
-            var date = new Date().toLocaleDateString('zh-CN');
-            var report = '═══════════════════════════════════════\n       Toastmasters 哼哈官报告\n═══════════════════════════════════════\n日期: ' + date + '\n\n';
-
-            var grandTotal = 0;
-            SPEAKERS.forEach(function(s) {
-                if (stats[s.id].total > 0) {
-                    grandTotal += stats[s.id].total;
-                    report += '\n【' + s.icon + ' ' + s.name + '】共 ' + stats[s.id].total + ' 次\n';
-                    
-                    var words = Object.entries(stats[s.id].words)
-                        .filter(function(wc) { return wc[1] > 0; })
-                        .sort(function(a, b) { return b[1] - a[1]; });
-                    
-                    if (words.length > 0) {
-                        report += '  赘语明细: ';
-                        report += words.map(function(wc) { return '"' + wc[0] + '"x' + wc[1]; }).join(', ');
-                        report += '\n';
-                    }
-                }
-            });
-
-            report += '\n───────────────────────────────────────\n全场总计: ' + grandTotal + ' 次赘语\n═══════════════════════════════════════\n\n【温馨提示】\n减少赘语的小技巧:\n• 用短暂停顿代替"嗯""啊"\n• 提前准备演讲稿框架\n• 放慢语速，给自己思考时间\n• 多练习，形成肌肉记忆\n\n═══════════════════════════════════════\n        AI 哼哈官 - 助力卓越演讲\n═══════════════════════════════════════\n';
-
-            return report;
-        }
-
-        function resetAll() {
-            if (transcriptHistory.length > 0) {
-                if (!confirm('确定要重置所有数据吗？当前统计将被清除。')) {
-                    return;
-                }
-            }
-
-            stopSession();
-            initStats();
-            transcriptHistory = [];
-            currentSpeaker = null;
-
-            document.querySelectorAll('.speaker-btn').forEach(function(btn) {
-                btn.classList.remove('active');
-            });
-
-            document.querySelectorAll('.speaker-btn .count').forEach(function(el) {
-                el.textContent = '0';
-            });
-
-            document.getElementById('currentSpeakerName').textContent = '请选择发言人';
-            document.getElementById('currentSpeakerTotal').textContent = '0 次哼哈';
-            
-            AH_WORDS.forEach(function(w) {
-                var currentEl = document.getElementById('currentAhGrid-count-' + w);
-                var totalEl = document.getElementById('totalAhGrid-count-' + w);
-                if (currentEl) currentEl.textContent = '0';
-                if (totalEl) totalEl.textContent = '0';
-            });
-
-            document.getElementById('transcriptBox').innerHTML = '<p style="color: #adb5bd; text-align: center; margin-top: 60px;">点击"开始"按钮后，这里将显示实时转写内容...</p>';
-
-            document.getElementById('statusDot').classList.remove('listening');
-            document.getElementById('statusText').textContent = '准备就绪';
-            document.getElementById('exportBtn').disabled = true;
-        }
-
-        window.onload = function() {
-            initStats();
-            initUI();
-        };
-    </script>
+/* ═══════════════════════════════════════════════
+   初始化
+═══════════════════════════════════════════════ */
+window.onload = function() {
+    AH_WORDS = buildWordList(currentLang);
+    initStats();
+    initUI();
+};
+</script>
 </body>
 </html>
-```
