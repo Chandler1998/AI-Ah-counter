@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>AI 哼哈官 - Toastmasters 会议助手</title>
     <style>
         * {
@@ -15,6 +17,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             padding: 20px;
         }
 
@@ -432,6 +435,24 @@
             .main-content {
                 grid-template-columns: 1fr;
             }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 1.05rem;
+            }
+
+            .speaker-btn {
+                padding: 12px 10px;
+                font-size: 1rem;
+            }
         }
 
         .status {
@@ -575,6 +596,13 @@
             color: #ffd43b;
             border-color: #ffd43b;
         }
+
+        /* iOS 安全区域适配 */
+        @supports (padding: max(0px)) {
+            body {
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+        }
     </style>
 </head>
 <body>
@@ -668,6 +696,26 @@
     </div>
 
     <script>
+        // ============ Compat helpers ============
+        // Polyfill: replaceAll for older iOS Safari (<13.4)
+        if (!String.prototype.replaceAll) {
+            String.prototype.replaceAll = function(search, replacement) {
+                if (typeof search === 'string') {
+                    return this.split(search).join(replacement);
+                }
+                return this.replace(search, replacement);
+            };
+        }
+
+        // safeReplaceAll: always works, regardless of polyfill status
+        function safeReplaceAll(str, search, replacement) {
+            if (typeof search === 'string' && typeof str.replaceAll === 'function') {
+                return str.replaceAll(search, replacement);
+            }
+            return str.split(search).join(replacement);
+        }
+
+        // ============ Constants ============
         var DEFAULT_SPEAKERS = [
             { id: 'host',       name: '主持人',       icon: '🎙️', custom: false },
             { id: 'speaker1',   name: '备稿演讲人1', icon: '🎤', custom: false },
@@ -813,14 +861,18 @@
         };
 
         function clearDragOver() {
-            document.querySelectorAll('.speaker-btn.drag-over').forEach(function(el) {
-                el.classList.remove('drag-over');
-            });
+            var els = document.querySelectorAll('.speaker-btn.drag-over');
+            for (var i = 0; i < els.length; i++) {
+                els[i].classList.remove('drag-over');
+            }
         }
 
         function reorderSpeakers(fromId, toId) {
-            var fromIdx = speakers.findIndex(function(s) { return s.id === fromId; });
-            var toIdx = speakers.findIndex(function(s) { return s.id === toId; });
+            var fromIdx = -1, toIdx = -1;
+            for (var i = 0; i < speakers.length; i++) {
+                if (speakers[i].id === fromId) fromIdx = i;
+                if (speakers[i].id === toId) toIdx = i;
+            }
             if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
             var item = speakers.splice(fromIdx, 1)[0];
             speakers.splice(toIdx, 0, item);
@@ -889,13 +941,17 @@
         function ensureSpeakerStats(speakerId, speakerName) {
             if (!stats[speakerId]) {
                 stats[speakerId] = { name: speakerName, total: 0, words: {} };
-                AH_WORDS.forEach(function(w) { stats[speakerId].words[w] = 0; });
+                for (var i = 0; i < AH_WORDS.length; i++) {
+                    stats[speakerId].words[AH_WORDS[i]] = 0;
+                }
             }
         }
 
         function initStats() {
             stats = {};
-            speakers.forEach(function(s) { ensureSpeakerStats(s.id, s.name); });
+            for (var i = 0; i < speakers.length; i++) {
+                ensureSpeakerStats(speakers[i].id, speakers[i].name);
+            }
         }
 
         function initTimers() {
@@ -911,144 +967,149 @@
             var grid = document.getElementById('speakerGrid');
             grid.innerHTML = '';
 
-            speakers.forEach(function(s) {
-                var btn = document.createElement('button');
-                btn.className = 'speaker-btn';
-                btn.dataset.id = s.id;
-                btn.draggable = true;
-                if (currentSpeaker === s.id) btn.classList.add('active');
+            for (var i = 0; i < speakers.length; i++) {
+                (function(s) {
+                    var btn = document.createElement('button');
+                    btn.className = 'speaker-btn';
+                    btn.dataset.id = s.id;
+                    btn.draggable = true;
+                    if (currentSpeaker === s.id) btn.classList.add('active');
 
-                btn.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('del-btn')) return;
-                    if (e.target.classList.contains('drag-handle')) return;
-                    if (e.target.classList.contains('name-input')) return;
-                    selectSpeaker(s.id);
-                });
+                    btn.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('del-btn')) return;
+                        if (e.target.classList.contains('drag-handle')) return;
+                        if (e.target.classList.contains('name-input')) return;
+                        selectSpeaker(s.id);
+                    });
 
-                var handle = document.createElement('span');
-                handle.className = 'drag-handle';
-                handle.textContent = '⠿';
-                handle.title = '拖动排序';
+                    var handle = document.createElement('span');
+                    handle.className = 'drag-handle';
+                    handle.textContent = '⠿';
+                    handle.title = '拖动排序';
 
-                btn.addEventListener('dragstart', function(e) {
-                    dragSourceId = s.id;
-                    btn.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                    try {
-                        var img = new Image();
-                        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
-                        e.dataTransfer.setDragImage(img, 0, 0);
-                    } catch(err) {}
-                });
+                    btn.addEventListener('dragstart', function(e) {
+                        dragSourceId = s.id;
+                        btn.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        try {
+                            var img = new Image();
+                            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+                            e.dataTransfer.setDragImage(img, 0, 0);
+                        } catch(err) {}
+                    });
 
-                btn.addEventListener('dragend', function() {
-                    btn.classList.remove('dragging');
-                    dragSourceId = null;
-                    clearDragOver();
-                });
+                    btn.addEventListener('dragend', function() {
+                        btn.classList.remove('dragging');
+                        dragSourceId = null;
+                        clearDragOver();
+                    });
 
-                btn.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (s.id !== dragSourceId) btn.classList.add('drag-over');
-                });
+                    btn.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (s.id !== dragSourceId) btn.classList.add('drag-over');
+                    });
 
-                btn.addEventListener('dragleave', function() {
-                    btn.classList.remove('drag-over');
-                });
+                    btn.addEventListener('dragleave', function() {
+                        btn.classList.remove('drag-over');
+                    });
 
-                btn.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    btn.classList.remove('drag-over');
-                    if (dragSourceId && dragSourceId !== s.id) {
-                        reorderSpeakers(dragSourceId, s.id);
-                    }
-                });
+                    btn.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        btn.classList.remove('drag-over');
+                        if (dragSourceId && dragSourceId !== s.id) {
+                            reorderSpeakers(dragSourceId, s.id);
+                        }
+                    });
 
-                handle.addEventListener('touchstart', function(e) {
-                    touchDragStart(e, s.id, btn);
-                }, { passive: false });
+                    handle.addEventListener('touchstart', function(e) {
+                        touchDragStart(e, s.id, btn);
+                    }, { passive: false });
 
-                var label = document.createElement('span');
-                label.className = 'speaker-label';
+                    var label = document.createElement('span');
+                    label.className = 'speaker-label';
 
-                var iconSpan = document.createElement('span');
-                iconSpan.textContent = s.icon + ' ';
-                iconSpan.style.flexShrink = '0';
+                    var iconSpan = document.createElement('span');
+                    iconSpan.textContent = s.icon + ' ';
+                    iconSpan.style.flexShrink = '0';
 
-                var nameInput = document.createElement('input');
-                nameInput.className = 'name-input';
-                nameInput.type = 'text';
-                nameInput.value = s.name;
-                nameInput.maxLength = 20;
-                nameInput.title = '双击可重命名';
-                nameInput.readOnly = true;
-
-                nameInput.addEventListener('dblclick', function(e) {
-                    e.stopPropagation();
-                    nameInput.readOnly = false;
-                    nameInput.focus();
-                    nameInput.select();
-                });
-
-                function saveName() {
+                    var nameInput = document.createElement('input');
+                    nameInput.className = 'name-input';
+                    nameInput.type = 'text';
+                    nameInput.value = s.name;
+                    nameInput.maxLength = 20;
+                    nameInput.title = '双击可重命名';
                     nameInput.readOnly = true;
-                    var newName = nameInput.value.trim();
-                    if (!newName) { nameInput.value = s.name; return; }
-                    s.name = newName;
-                    if (stats[s.id]) stats[s.id].name = newName;
-                    if (currentSpeaker === s.id) {
-                        document.getElementById('currentSpeakerName').textContent = newName;
+
+                    nameInput.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        nameInput.readOnly = false;
+                        nameInput.focus();
+                        nameInput.select();
+                    });
+
+                    function saveName() {
+                        nameInput.readOnly = true;
+                        var newName = nameInput.value.trim();
+                        if (!newName) { nameInput.value = s.name; return; }
+                        s.name = newName;
+                        if (stats[s.id]) stats[s.id].name = newName;
+                        if (currentSpeaker === s.id) {
+                            document.getElementById('currentSpeakerName').textContent = newName;
+                        }
                     }
-                }
 
-                nameInput.addEventListener('blur', saveName);
-                nameInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') { e.preventDefault(); saveName(); nameInput.blur(); }
-                    if (e.key === 'Escape') { nameInput.value = s.name; nameInput.blur(); }
-                });
+                    nameInput.addEventListener('blur', saveName);
+                    nameInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') { e.preventDefault(); saveName(); nameInput.blur(); }
+                        if (e.key === 'Escape') { nameInput.value = s.name; nameInput.blur(); }
+                    });
 
-                label.appendChild(iconSpan);
-                label.appendChild(nameInput);
+                    label.appendChild(iconSpan);
+                    label.appendChild(nameInput);
 
-                var timerBadge = document.createElement('span');
-                timerBadge.className = 'timer-badge';
-                timerBadge.id = 'timer-' + s.id;
-                var secs = getSpeakerSeconds(s.id);
-                timerBadge.textContent = secs > 0 ? formatTime(secs) : '';
+                    var timerBadge = document.createElement('span');
+                    timerBadge.className = 'timer-badge';
+                    timerBadge.id = 'timer-' + s.id;
+                    var secs = getSpeakerSeconds(s.id);
+                    timerBadge.textContent = secs > 0 ? formatTime(secs) : '';
 
-                var countSpan = document.createElement('span');
-                countSpan.className = 'count';
-                countSpan.id = 'count-' + s.id;
-                countSpan.textContent = (stats[s.id] && stats[s.id].total) || 0;
+                    var countSpan = document.createElement('span');
+                    countSpan.className = 'count';
+                    countSpan.id = 'count-' + s.id;
+                    countSpan.textContent = (stats[s.id] && stats[s.id].total) || 0;
 
-                var delBtn = document.createElement('button');
-                delBtn.className = 'del-btn';
-                delBtn.textContent = '✕';
-                delBtn.title = '删除该角色';
-                delBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    deleteSpeaker(s.id);
-                });
+                    var delBtn = document.createElement('button');
+                    delBtn.className = 'del-btn';
+                    delBtn.textContent = '✕';
+                    delBtn.title = '删除该角色';
+                    delBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteSpeaker(s.id);
+                    });
 
-                btn.appendChild(handle);
-                btn.appendChild(label);
-                btn.appendChild(timerBadge);
-                btn.appendChild(countSpan);
-                btn.appendChild(delBtn);
-                grid.appendChild(btn);
-            });
+                    btn.appendChild(handle);
+                    btn.appendChild(label);
+                    btn.appendChild(timerBadge);
+                    btn.appendChild(countSpan);
+                    btn.appendChild(delBtn);
+                    grid.appendChild(btn);
+                })(speakers[i]);
+            }
         }
 
         function renderAhGrid(containerId) {
             var container = document.getElementById(containerId);
-            container.innerHTML = AH_WORDS.map(function(w) {
+            var html = '';
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                var w = AH_WORDS[i];
                 var safeId = w.replace(/\s+/g, '_');
-                return '<div class="ah-item" id="' + containerId + '-' + safeId + '">' +
-                    '<div class="word">"' + w + '"</div>' +
+                html += '<div class="ah-item" id="' + containerId + '-' + safeId + '">' +
+                    '<div class="word">&ldquo;' + w + '&rdquo;</div>' +
                     '<div class="count" id="' + containerId + '-count-' + safeId + '">0</div>' +
                 '</div>';
-            }).join('');
+            }
+            container.innerHTML = html;
         }
 
         function initUI() {
@@ -1062,9 +1123,11 @@
             var input = document.getElementById('newSpeakerInput');
             var name = input.value.trim();
             if (!name) { input.focus(); return; }
-            if (speakers.some(function(s) { return s.name === name; })) {
-                alert('已存在同名角色：' + name);
-                return;
+            for (var i = 0; i < speakers.length; i++) {
+                if (speakers[i].name === name) {
+                    alert('已存在同名角色：' + name);
+                    return;
+                }
             }
             var newId = 'custom_' + (customIdCounter++);
             var icons = ['👤', '💬', '🗣️', '📢', '✨', '🌈'];
@@ -1079,7 +1142,10 @@
         }
 
         function deleteSpeaker(speakerId) {
-            var s = speakers.find(function(sp) { return sp.id === speakerId; });
+            var s = null;
+            for (var i = 0; i < speakers.length; i++) {
+                if (speakers[i].id === speakerId) { s = speakers[i]; break; }
+            }
             if (!s) return;
             var hasData = stats[speakerId] && stats[speakerId].total > 0;
             if (hasData) {
@@ -1088,7 +1154,11 @@
             if (currentSpeaker === speakerId && isListening) {
                 pauseSpeakerTimer(speakerId);
             }
-            speakers = speakers.filter(function(sp) { return sp.id !== speakerId; });
+            var newSpeakers = [];
+            for (var j = 0; j < speakers.length; j++) {
+                if (speakers[j].id !== speakerId) newSpeakers.push(speakers[j]);
+            }
+            speakers = newSpeakers;
             delete stats[speakerId];
             delete speakerTimers[speakerId];
             if (currentSpeaker === speakerId) {
@@ -1111,7 +1181,10 @@
                 if (prevTimer) prevTimer.textContent = formatTime(getSpeakerSeconds(currentSpeaker));
             }
             currentSpeaker = speakerId;
-            var speaker = speakers.find(function(s) { return s.id === speakerId; });
+            var speaker = null;
+            for (var i = 0; i < speakers.length; i++) {
+                if (speakers[i].id === speakerId) { speaker = speakers[i]; break; }
+            }
             if (!speaker) return;
             ensureSpeakerTimer(speakerId);
             if (isListening) {
@@ -1124,11 +1197,15 @@
 
         /* 统计更新 */
         function resetCurrentAhGrid() {
-            AH_WORDS.forEach(function(w) {
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                var w = AH_WORDS[i];
                 var safeId = w.replace(/\s+/g, '_');
                 var el = document.getElementById('currentAhGrid-' + safeId);
-                if (el) el.getElementsByClassName('count')[0].textContent = '0';
-            });
+                if (el) {
+                    var countEls = el.getElementsByClassName('count');
+                    if (countEls.length > 0) countEls[0].textContent = '0';
+                }
+            }
         }
 
         function updateCurrentStats() {
@@ -1136,49 +1213,61 @@
             var sp = stats[currentSpeaker];
             var unit = currentLang === 'zh' ? ' 次哼哈' : ' fillers';
             document.getElementById('currentSpeakerTotal').textContent = sp.total + unit;
-            AH_WORDS.forEach(function(w) {
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                var w = AH_WORDS[i];
                 var safeId = w.replace(/\s+/g, '_');
                 var el = document.getElementById('currentAhGrid-' + safeId);
-                if (el) el.getElementsByClassName('count')[0].textContent = sp.words[w] || 0;
-            });
+                if (el) {
+                    var countEls = el.getElementsByClassName('count');
+                    if (countEls.length > 0) countEls[0].textContent = sp.words[w] || 0;
+                }
+            }
             refreshCurrentMeta(currentSpeaker);
         }
 
         function updateTotalStats() {
             var totalByWord = {};
-            AH_WORDS.forEach(function(w) { totalByWord[w] = 0; });
-            speakers.forEach(function(s) {
-                if (!stats[s.id]) return;
-                AH_WORDS.forEach(function(w) {
-                    totalByWord[w] += stats[s.id].words[w] || 0;
-                });
-                var countEl = document.getElementById('count-' + s.id);
-                if (countEl) countEl.textContent = stats[s.id].total;
-            });
-            AH_WORDS.forEach(function(w) {
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                totalByWord[AH_WORDS[i]] = 0;
+            }
+            for (var j = 0; j < speakers.length; j++) {
+                var sid = speakers[j].id;
+                if (!stats[sid]) continue;
+                for (var k = 0; k < AH_WORDS.length; k++) {
+                    totalByWord[AH_WORDS[k]] += stats[sid].words[AH_WORDS[k]] || 0;
+                }
+                var countEl = document.getElementById('count-' + sid);
+                if (countEl) countEl.textContent = stats[sid].total;
+            }
+            for (var m = 0; m < AH_WORDS.length; m++) {
+                var w = AH_WORDS[m];
                 var safeId = w.replace(/\s+/g, '_');
                 var el = document.getElementById('totalAhGrid-' + safeId);
-                if (el) el.getElementsByClassName('count')[0].textContent = totalByWord[w];
-            });
+                if (el) {
+                    var countEls2 = el.getElementsByClassName('count');
+                    if (countEls2.length > 0) countEls2[0].textContent = totalByWord[w];
+                }
+            }
         }
 
         /* 赘词检测 */
         function detectAhWords(text) {
             var detected = [];
-            AH_WORDS.forEach(function(word) {
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                var word = AH_WORDS[i];
                 var regex = new RegExp(word, 'g');
                 var matches = text.match(regex);
                 if (matches) detected.push({ word: word, count: matches.length });
-            });
+            }
             return detected;
         }
 
         function highlightAhWords(text) {
             var result = text;
-            AH_WORDS.forEach(function(word) {
-                var regex = new RegExp(word, 'g');
-                result = result.replaceAll(word, '<span class="ah-word">' + word + '</span>');
-            });
+            for (var i = 0; i < AH_WORDS.length; i++) {
+                var word = AH_WORDS[i];
+                result = safeReplaceAll(result, word, '<span class="ah-word">' + word + '</span>');
+            }
             return result;
         }
 
@@ -1193,46 +1282,92 @@
             rec.continuous = true;
             rec.interimResults = true;
             rec.lang = currentLang === 'zh' ? 'zh-CN' : 'en-US';
+
             rec.onresult = function(event) {
                 var finalTranscript = '';
                 for (var i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal)
+                    if (event.results[i].isFinal) {
                         finalTranscript += event.results[i][0].transcript;
+                    }
                 }
                 if (finalTranscript && currentSpeaker) processTranscript(finalTranscript);
             };
+
             rec.onerror = function(event) {
                 console.error('语音识别错误:', event.error);
-                if (event.error !== 'no-speech' && event.error !== 'aborted')
+                // iOS: "not-allowed" means no user gesture, don't spam alert
+                if (event.error === 'not-allowed') {
+                    document.getElementById('statusText').textContent = '请在iOS上点击"开始"按钮';
+                    isListening = false;
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    document.getElementById('statusDot').classList.remove('listening');
+                    if (currentSpeaker) {
+                        pauseSpeakerTimer(currentSpeaker);
+                    }
+                    return;
+                }
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
                     alert('语音识别出错: ' + event.error);
+                }
             };
+
             rec.onend = function() {
-                if (isListening) rec.start();
+                if (isListening) {
+                    try {
+                        rec.start();
+                    } catch (e) {
+                        // iOS: restart requires user gesture, stop gracefully
+                        console.warn('无法自动重启语音识别（可能需要用户手势）:', e.message);
+                        isListening = false;
+                        document.getElementById('startBtn').disabled = false;
+                        document.getElementById('stopBtn').disabled = true;
+                        document.getElementById('statusDot').classList.remove('listening');
+                        document.getElementById('statusText').textContent = '已暂停 - 点击"开始"继续';
+                        if (currentSpeaker) {
+                            pauseSpeakerTimer(currentSpeaker);
+                            var timerEl = document.getElementById('timer-' + currentSpeaker);
+                            if (timerEl) timerEl.textContent = formatTime(getSpeakerSeconds(currentSpeaker));
+                            refreshCurrentMeta(currentSpeaker);
+                        }
+                    }
+                }
             };
+
             return rec;
         }
 
         function processTranscript(text) {
             var detected = detectAhWords(text);
             if (detected.length > 0) {
-                detected.forEach(function(item) {
+                for (var i = 0; i < detected.length; i++) {
+                    var item = detected[i];
                     stats[currentSpeaker].words[item.word] += item.count;
                     stats[currentSpeaker].total += item.count;
                     var safeId = item.word.replace(/\s+/g, '_');
                     var el = document.getElementById('currentAhGrid-' + safeId);
                     if (el) {
                         el.classList.add('highlight');
-                        setTimeout(function() { el.classList.remove('highlight'); }, 500);
+                        (function(target) {
+                            setTimeout(function() { target.classList.remove('highlight'); }, 500);
+                        })(el);
                     }
-                });
+                }
                 updateCurrentStats();
                 updateTotalStats();
             }
-            var speaker = speakers.find(function(s) { return s.id === currentSpeaker; });
+            var speaker = null;
+            for (var i = 0; i < speakers.length; i++) {
+                if (speakers[i].id === currentSpeaker) { speaker = speakers[i]; break; }
+            }
+            var ahSum = 0;
+            for (var j = 0; j < detected.length; j++) {
+                ahSum += detected[j].count;
+            }
             var entry = {
                 speaker: speaker ? speaker.name : currentSpeaker,
                 text: text,
-                ahCount: detected.reduce(function(sum, d) { return sum + d.count; }, 0)
+                ahCount: ahSum
             };
             transcriptHistory.push(entry);
             updateTranscriptDisplay(entry);
@@ -1277,7 +1412,11 @@
 
         function stopSession() {
             if (recognition) {
-                recognition.stop();
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.warn('停止语音识别时出错:', e.message);
+                }
                 isListening = false;
             }
             if (currentSpeaker) {
@@ -1312,8 +1451,9 @@
                        '日期: ' + date + '\n\n';
 
             var grandTotal = 0;
-            speakers.forEach(function(s) {
-                if (!stats[s.id] || stats[s.id].total === 0) return;
+            for (var i = 0; i < speakers.length; i++) {
+                var s = speakers[i];
+                if (!stats[s.id] || stats[s.id].total === 0) continue;
                 grandTotal += stats[s.id].total;
                 var secs = getSpeakerSeconds(s.id);
                 var timeStr = formatTime(secs);
@@ -1324,15 +1464,24 @@
                 report += '  总计赘语: ' + stats[s.id].total + ' 次\n';
                 report += '  发言时长: ' + timeStr + '\n';
                 report += '  哼哈频率: ' + rateStr + '\n';
-                var words = Object.entries(stats[s.id].words)
-                    .filter(function(wc) { return wc[1] > 0; })
-                    .sort(function(a, b) { return b[1] - a[1]; });
-                if (words.length > 0) {
+
+                var wordEntries = [];
+                for (var wordKey in stats[s.id].words) {
+                    if (stats[s.id].words[wordKey] > 0) {
+                        wordEntries.push({ word: wordKey, count: stats[s.id].words[wordKey] });
+                    }
+                }
+                wordEntries.sort(function(a, b) { return b.count - a.count; });
+                if (wordEntries.length > 0) {
                     report += '  赘语明细: ';
-                    report += words.map(function(wc) { return '"' + wc[0] + '"x' + wc[1]; }).join(', ');
+                    var parts = [];
+                    for (var j = 0; j < wordEntries.length; j++) {
+                        parts.push('"' + wordEntries[j].word + '"x' + wordEntries[j].count);
+                    }
+                    report += parts.join(', ');
                     report += '\n';
                 }
-            });
+            }
 
             report += '\n───────────────────────────────────────\n' +
                     '全场总计: ' + grandTotal + ' 次赘语\n' +
@@ -1354,9 +1503,15 @@
                 if (!confirm('确定要重置所有数据吗？当前统计将被清除。')) return;
             }
             stopSession();
-            speakers = DEFAULT_SPEAKERS.map(function(s) {
-                return { id: s.id, name: s.name, icon: s.icon, custom: s.custom };
-            });
+            speakers = [];
+            for (var i = 0; i < DEFAULT_SPEAKERS.length; i++) {
+                speakers.push({
+                    id: DEFAULT_SPEAKERS[i].id,
+                    name: DEFAULT_SPEAKERS[i].name,
+                    icon: DEFAULT_SPEAKERS[i].icon,
+                    custom: DEFAULT_SPEAKERS[i].custom
+                });
+            }
             customIdCounter = 1;
             initStats();
             initTimers();
@@ -1364,11 +1519,15 @@
             currentSpeaker = null;
             renderSpeakerGrid();
             resetCurrentAhGrid();
-            AH_WORDS.forEach(function(w) {
+            for (var j = 0; j < AH_WORDS.length; j++) {
+                var w = AH_WORDS[j];
                 var safeId = w.replace(/\s+/g, '_');
                 var el = document.getElementById('totalAhGrid-' + safeId);
-                if (el) el.getElementsByClassName('count')[0].textContent = '0';
-            });
+                if (el) {
+                    var cels = el.getElementsByClassName('count');
+                    if (cels.length > 0) cels[0].textContent = '0';
+                }
+            }
             document.getElementById('currentSpeakerName').textContent = '请选择发言人';
             document.getElementById('currentSpeakerTotal').textContent = '0 次哼哈';
             document.getElementById('currentSpeakerTime').textContent = '—';
